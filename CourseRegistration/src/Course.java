@@ -1,50 +1,76 @@
+import java.util.ArrayList;
+
 public class Course {
-   private String courseName;
-   private Student[] students;
-   private Student[] waitListStudents;
-   private int maxStudents;
-   private int numStudents;
+    private String courseName;
+    private ArrayList<Student> roster;
+    private ArrayList<Student> waitlist;
+    private int maxRosterSize;
+    private int maxWaitlistSize;
 
-   public Course(String courseName, int maxStudents) {
-      this.courseName = courseName;
-      this.maxStudents = maxStudents;
-      this.students = new Student[maxStudents];
-      this.numStudents = 0;
-   }
+    // Constructor
+    public Course(String courseName, int maxRosterSize, int maxWaitlistSize) {
+        this.courseName = courseName;
+        this.roster = new ArrayList<>();
+        this.waitlist = new ArrayList<>();
+        this.maxRosterSize = maxRosterSize;
+        this.maxWaitlistSize = maxWaitlistSize;
+    }
 
-   public boolean addStudent(Student student) {
-      if (numStudents < maxStudents) {
-         students[numStudents] = student;
-         numStudents++;
-         return true;
-      }
-      return false;
-   }
+    // Getters
+    public String getCourseName() {
+        return courseName;
+    }
 
-   public boolean dropStudent(Student student) {
-      for (int i = 0; i < numStudents; i++) {
-         if (students[i].equals(student)) {
-            // Shift remaining students to fill the gap
-            for (int j = i; j < numStudents - 1; j++) {
-               students[j] = students[j + 1];
+    public ArrayList<Student> getRoster() {
+        return new ArrayList<>(roster);
+    }
+
+    public ArrayList<Student> getWaitlist() {
+        return new ArrayList<>(waitlist);
+    }
+
+    // toString method
+    @Override
+    public String toString() {
+        StringBuilder result = new StringBuilder();
+        result.append(courseName).append("\n");
+        result.append(roster.size()).append(" enrolled (maximum allowed ").append(maxRosterSize).append(")\n");
+        for (Student student : roster) {
+            result.append("\t").append(student).append("\n");
+        }
+        result.append(waitlist.size()).append(" on waitlist (maximum allowed ").append(maxWaitlistSize).append(")\n");
+        for (Student student : waitlist) {
+            result.append("\t").append(student).append("\n");
+        }
+        return result.toString();
+    }
+
+    // Add a student to the course
+    public boolean addStudent(Student student) {
+        if (student.isTuitionPaid() && !roster.contains(student) && !waitlist.contains(student)) {
+            if (roster.size() < maxRosterSize) {
+                roster.add(student);
+            } else if (waitlist.size() < maxWaitlistSize) {
+                waitlist.add(student);
+            } else {
+                return false;
             }
-            students[numStudents - 1] = null;
-            numStudents--;
             return true;
-         }
-      }
-      return false;
-   }
+        }
+        return false;
+    }
 
-   @Override
-   public String toString() {
-      StringBuilder sb = new StringBuilder();
-      sb.append(courseName).append("\n");
-      sb.append(numStudents).append(" Enrolled (maximum allowed 5) ").append("\n");
-      sb.append(numStudents).append(" on waitlist (maximum allowed 5) ").append("\n");
-      for (int i = 0; i < numStudents; i++) {
-         sb.append(students[i].toString()).append("\n");
-      }
-      return sb.toString();
-   }
+    // Drop a student from the course
+    public boolean dropStudent(Student student) {
+        if (roster.remove(student)) {
+            if (!waitlist.isEmpty()) {
+                Student firstWaitlistedStudent = waitlist.remove(0);
+                roster.add(firstWaitlistedStudent);
+            }
+            return true;
+        } else if (waitlist.remove(student)) {
+            return true;
+        }
+        return false;
+    }
 }

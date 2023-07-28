@@ -1,17 +1,21 @@
-import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Course {
     private String courseName;
-    private ArrayList<Student> roster;
-    private ArrayList<Student> waitlist;
+    private Student[] roster;
+    private Student[] waitlist;
+    private int rosterSize;
+    private int waitlistSize;
     private int maxRosterSize;
     private int maxWaitlistSize;
 
     // Constructor
     public Course(String courseName, int maxRosterSize, int maxWaitlistSize) {
         this.courseName = courseName;
-        this.roster = new ArrayList<>();
-        this.waitlist = new ArrayList<>();
+        this.roster = new Student[maxRosterSize];
+        this.waitlist = new Student[maxWaitlistSize];
+        this.rosterSize = 0;
+        this.waitlistSize = 0;
         this.maxRosterSize = maxRosterSize;
         this.maxWaitlistSize = maxWaitlistSize;
     }
@@ -21,12 +25,12 @@ public class Course {
         return courseName;
     }
 
-    public ArrayList<Student> getRoster() {
-        return new ArrayList<>(roster);
+    public Student[] getRoster() {
+        return Arrays.copyOf(roster, rosterSize);
     }
 
-    public ArrayList<Student> getWaitlist() {
-        return new ArrayList<>(waitlist);
+    public Student[] getWaitlist() {
+        return Arrays.copyOf(waitlist, waitlistSize);
     }
 
     // toString method
@@ -34,24 +38,24 @@ public class Course {
     public String toString() {
         StringBuilder result = new StringBuilder();
         result.append(courseName).append("\n");
-        result.append(roster.size()).append(" enrolled (maximum allowed ").append(maxRosterSize).append(")\n");
-        for (Student student : roster) {
-            result.append("\t").append(student).append("\n");
+        result.append(rosterSize).append(" enrolled (maximum allowed ").append(maxRosterSize).append(")\n");
+        for (int i = 0; i < rosterSize; i++) {
+            result.append("\t").append(roster[i]).append("\n");
         }
-        result.append(waitlist.size()).append(" on waitlist (maximum allowed ").append(maxWaitlistSize).append(")\n");
-        for (Student student : waitlist) {
-            result.append("\t").append(student).append("\n");
+        result.append(waitlistSize).append(" on waitlist (maximum allowed ").append(maxWaitlistSize).append(")\n");
+        for (int i = 0; i < waitlistSize; i++) {
+            result.append("\t").append(waitlist[i]).append("\n");
         }
         return result.toString();
     }
 
     // Add a student to the course
     public boolean addStudent(Student student) {
-        if (student.isTuitionPaid() && !roster.contains(student) && !waitlist.contains(student)) {
-            if (roster.size() < maxRosterSize) {
-                roster.add(student);
-            } else if (waitlist.size() < maxWaitlistSize) {
-                waitlist.add(student);
+        if (student.isTuitionPaid() && !containsStudent(roster, rosterSize, student) && !containsStudent(waitlist, waitlistSize, student)) {
+            if (rosterSize < maxRosterSize) {
+                roster[rosterSize++] = student;
+            } else if (waitlistSize < maxWaitlistSize) {
+                waitlist[waitlistSize++] = student;
             } else {
                 return false;
             }
@@ -62,14 +66,39 @@ public class Course {
 
     // Drop a student from the course
     public boolean dropStudent(Student student) {
-        if (roster.remove(student)) {
-            if (!waitlist.isEmpty()) {
-                Student firstWaitlistedStudent = waitlist.remove(0);
-                roster.add(firstWaitlistedStudent);
+        for (int i = 0; i < rosterSize; i++) {
+            if (roster[i].equals(student)) {
+                // Shift students in the waitlist to the roster if there's space
+                if (waitlistSize > 0) {
+                    roster[i] = waitlist[0];
+                    for (int j = 0; j < waitlistSize - 1; j++) {
+                        waitlist[j] = waitlist[j + 1];
+                    }
+                    waitlist[waitlistSize - 1] = null;
+                    waitlistSize--;
+                } else {
+                    roster[i] = null;
+                }
+                rosterSize--;
+                return true;
             }
-            return true;
-        } else if (waitlist.remove(student)) {
-            return true;
+        }
+        for (int i = 0; i < waitlistSize; i++) {
+            if (waitlist[i].equals(student)) {
+                waitlist[i] = null;
+                waitlistSize--;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Helper method to check if a student is in a student array
+    private boolean containsStudent(Student[] students, int size, Student student) {
+        for (int i = 0; i < size; i++) {
+            if (students[i].equals(student)) {
+                return true;
+            }
         }
         return false;
     }
